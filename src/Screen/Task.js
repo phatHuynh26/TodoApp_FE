@@ -7,40 +7,74 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import LinearGradientView from '../Component/LinearGradientView';
 import ImcompleteTaskComponent from '../Component/ImcompleteTaskComponent';
 import ModalAddTask from '../Component/ModalAddTask';
+import {useDispatch, useSelector} from 'react-redux';
+import axios from 'axios';
+import {format} from 'date-fns';
+import {useNavigation} from '@react-navigation/native';
 
 const Task = () => {
+  const appState = useSelector(state => state.app);
   const [searchQuery, setSearchQuery] = useState('');
-  const task = [
-    {id: 1, name: 'football', date: 'Ngày mai', time: 1.3},
-    {id: 2, name: 'chơi gái', date: 'Ngày mai', time: 10.3},
-    {id: 3, name: 'đá phò', date: 'tối nay', time: 11.3},
-    {id: 4, name: 'football game2', date: 'Ngày mai', time: 10.3},
-    {id: 5, name: 'football game', date: 'Ngày mai', time: 10.3},
-    {id: 6, name: 'nạp game', date: 'Ngày mai', time: 10.3},
-    {id: 7, name: 'football2', date: 'Ngày mai', time: 10.3},
-    {id: 8, name: 'nạp game', date: 'Ngày mai', time: 10.3},
-  ];
-  const filteredTask = task.filter(task =>
-    task.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const [taskDoing, setTaskDoing] = useState([]);
+  const EmailUser = appState.user.email;
+  const taskIds = taskDoing.map(task => task._id);
+
+  useEffect(() => {
+    const getTask = async () => {
+      try {
+        const response = await axios.post(
+          'http://10.0.2.2:2610/users/showtask',
+          {
+            email: EmailUser,
+          },
+        );
+        setTaskDoing(response.data.tasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+    if (EmailUser) {
+      getTask();
+      // Thiết lập interval để gọi API định kỳ
+      const intervalId = setInterval(() => {
+        getTask();
+      }, 2000); // Cập nhật mỗi 10 giây
+
+      // Cleanup function để dừng interval khi component unmount
+      return () => clearInterval(intervalId);
+    } else {
+      console.error('EmailUser is not provided');
+    }
+  }, [EmailUser]);
+  const filteredTask = taskDoing.filter(
+    task =>
+      task.description &&
+      typeof task.description === 'string' &&
+      task.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
   const searchItem = ({item}) => (
     <View style={styles.searchResults}>
       <ImcompleteTaskComponent
-        name={item.name}
-        date={item.date}
+        name={item.description}
+        date={formatDate(item.day)}
         time={item.time}
       />
     </View>
   );
+  const formatDate = dateString => {
+    const options = {day: '2-digit', month: '2-digit', year: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', options); // Dùng 'en-GB' để định dạng dd/MM/yyyy
+  };
   const taskList = ({item}) => (
     <View style={styles.taskList}>
       <ImcompleteTaskComponent
-        name={item.name}
-        date={item.date}
+        name={item.description}
+        date={formatDate(item.day)}
         time={item.time}
       />
     </View>
@@ -75,10 +109,10 @@ const Task = () => {
       <View style={{height: 340}}>
         <FlatList
           style={{marginTop: 10}}
-          data={task}
+          data={taskDoing}
           renderItem={taskList}
           scrollEnabled={true}
-          keyExtractor={item => item.id}></FlatList>
+          keyExtractor={item => item._id.toString()}></FlatList>
       </View>
       <TouchableOpacity
         style={styles.buttonAdd}
@@ -87,7 +121,7 @@ const Task = () => {
           style={styles.addIcon}
           source={require('../assets/img/add.png')}></Image>
       </TouchableOpacity>
-      <View >
+      <View>
         <ModalAddTask
           visible={modalVisible}
           onClose={() => setModalVisible(false)}

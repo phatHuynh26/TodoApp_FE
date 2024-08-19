@@ -1,22 +1,98 @@
-import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import React from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ToastAndroid,
+} from 'react-native';
+import React, {useEffect, useState} from 'react';
 import LinearGradientView from '../Component/LinearGradientView';
-const TaskDetail = () => {
-  const task = {
-    name: 'ádsadsadsadsadsa',
-    day: 111,
-    time: '11111',
-    description:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+import {useNavigation, useRoute} from '@react-navigation/native';
+import axios from 'axios';
+import {useSelector} from 'react-redux';
+const TaskDetail = ({route, navigation}) => {
+  const appState = useSelector(state => state.app);
+  const userEmail = appState.user.email;
+  const {id} = route.params;
+  const [task, setTask] = useState([]);
+  // định dạng ngày
+  const formatDate = dateString => {
+    const options = {day: '2-digit', month: '2-digit', year: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', options); // Dùng 'en-GB' để định dạng dd/MM/yyyy
   };
+  useEffect(() => {
+    const fetchTaskDetail = async () => {
+      try {
+        // Sửa URL thành http://10.0.2.2:2610/users/taskdetail
+        const response = await axios.post(
+          'http://10.0.2.2:2610/users/taskdetail',
+          {email: userEmail, taskId: id},
+        );
+        setTask(response.data.user);
+      } catch (error) {
+        console.error('Error fetching task detail:', error);
+      }
+    };
 
+    fetchTaskDetail();
+  }, [userEmail, id]);
+  // lấy api done Task
+  const markTaskAsDone = async (email, taskId) => {
+    try {
+      const response = await axios.post('http://10.0.2.2:2610/users/donetask', {
+        email: userEmail,
+        taskId: id,
+      });
+      console.log('Task marked as done:', response.data);
+    } catch (error) {
+      console.error('Error marking task as done:', error);
+    }
+  };
+  const handleMarkAsDone = () => {
+    try {
+      markTaskAsDone(userEmail, id);
+      ToastAndroid.show('Task has been marked as done!', ToastAndroid.SHORT);
+      navigation.navigate('HomeScreen');
+    } catch (error) {
+      ToastAndroid.show(
+        'Failed to mark task as done. Please try again.',
+        ToastAndroid.SHORT,
+      );
+    }
+  };
+  // lấy api xóa task
+  const deleteTask = async (email, taskId) => {
+    try {
+      const response = await axios.post(
+        'http://10.0.2.2:2610/users/deletetask',
+        {email: userEmail, taskId: id},
+      );
+      console.log('Task deleted:', response.data);
+    } catch (error) {
+      console.error('Error delete task:', error);
+    }
+  };
+  const handleDelete = () => {
+    try {
+      deleteTask(userEmail, id);
+      ToastAndroid.show('Task delete success', ToastAndroid.SHORT);
+      navigation.navigate('HomeScreen');
+    } catch (error) {
+      ToastAndroid.show(
+        'Failed to delete Please try again.',
+        ToastAndroid.SHORT,
+      );
+    }
+  };
   return (
     <LinearGradientView style={styles.container}>
       <Text style={styles.title}>Task Detail</Text>
       <View style={styles.taskView}>
-        <Text style={styles.nameTask}>{task.name}</Text>
+        <Text style={styles.nameTask}>{task.title}</Text>
         <View style={styles.timeView}>
-          <Text style={styles.day}>{task.day}</Text>
+          <Text style={styles.day}>{formatDate(task.day)} </Text>
           <Text style={styles.time}> {task.time}</Text>
         </View>
       </View>
@@ -25,24 +101,24 @@ const TaskDetail = () => {
       </View>
 
       <View style={styles.buttonView}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleMarkAsDone}>
           <Image
             style={{height: 20, width: 20, marginBottom: 5}}
             source={require('../assets/img/done.png')}></Image>
-          <Text style={styles.buttonText}>done</Text>
+          <Text style={styles.buttonText}>Done</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleDelete}>
           <Image
             style={{height: 20, width: 20, marginBottom: 5}}
-            source={require('../assets/img/done.png')}></Image>
-          <Text style={styles.buttonText}>done</Text>
+            source={require('../assets/img/delete.png')}></Image>
+          <Text style={styles.buttonText}>Delete</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
           <Image
             style={{height: 20, width: 20, marginBottom: 5}}
-            source={require('../assets/img/done.png')}></Image>
-          <Text style={styles.buttonText}>done</Text>
+            source={require('../assets/img/Pin.png')}></Image>
+          <Text style={styles.buttonText}>Pin</Text>
         </TouchableOpacity>
       </View>
     </LinearGradientView>

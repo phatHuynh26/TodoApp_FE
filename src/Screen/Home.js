@@ -1,39 +1,111 @@
-import {Image, StyleSheet, Text, View, FlatList} from 'react-native';
-import React from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Touchable,
+  TouchableOpacity,
+} from 'react-native';
+import React, {useEffect, useState} from 'react';
 import LinearGradientView from '../Component/LinearGradientView';
 import ImcompleteTaskComponent from '../Component/ImcompleteTaskComponent';
 import CompletedTaskComponent from '../Component/CompletedTaskComponent';
 import {useDispatch, useSelector} from 'react-redux';
+import axios from 'axios';
+import {format} from 'date-fns';
+import {useNavigation} from '@react-navigation/native';
 
 const Home = () => {
+  const navigation = useNavigation();
   const appState = useSelector(state => state.app);
+  const [taskDoing, setTaskDoing] = useState([]);
+  const [taskDone, setTaskDone] = useState('');
 
+  const EmailUser = appState.user.email;
+  // gọi task doing
+  useEffect(() => {
+    const getTask = async () => {
+      try {
+        const response = await axios.post(
+          'http://10.0.2.2:2610/users/showtask',
+          {
+            email: EmailUser,
+          },
+        );
+        setTaskDoing(response.data.tasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+    if (EmailUser) {
+      getTask();
+      // Thiết lập interval để gọi API định kỳ
+      const intervalId = setInterval(() => {
+        getTask();
+      }, 2000); // Cập nhật mỗi 10 giây
 
-  const tasksDoing = [
-    {id: 1, name: 'đi ỉa', date: 'Ngày mai', time: 10.3},
-    {id: 2, name: 'chơi gái', date: 'Ngày mai', time: 10.3},
-    {id: 3, name: 'đá phò', date: 'tối nay', time: 11.3},
-    {id: 4, name: 'nạp game', date: 'Ngày mai', time: 10.3},
-  ];
-  const tasksDone = [
-    {id: 1, name: 'làm bài', date: 'Ngày mai', time: 10.3},
-    {id: 2, name: 'chơi gái', date: 'Ngày mai', time: 10.3},
-    {id: 3, name: 'đá phò', date: 'tối nay', time: 11.3},
-    {id: 4, name: 'nạp game', date: 'Ngày mai', time: 10.3},
-  ];
+      // Cleanup function để dừng interval khi component unmount
+      return () => clearInterval(intervalId);
+    } else {
+      console.error('EmailUser is not provided');
+    }
+  }, [EmailUser]);
+  // gọi task đã xong
+  useEffect(() => {
+    const getTask = async () => {
+      try {
+        const response = await axios.post(
+          'http://10.0.2.2:2610/users/showtaskdone',
+          {
+            email: EmailUser,
+          },
+        );
+        setTaskDone(response.data.tasks);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+    if (EmailUser) {
+      getTask();
+      // Thiết lập interval để gọi API định kỳ
+      const intervalId = setInterval(() => {
+        getTask();
+      }, 2000); // Cập nhật mỗi 10 giây
+
+      // Cleanup function để dừng interval khi component unmount
+      return () => clearInterval(intervalId);
+    } else {
+      console.error('EmailUser is not provided');
+    }
+  }, [EmailUser]);
+  const formatDate = dateString => {
+    const options = {day: '2-digit', month: '2-digit', year: 'numeric'};
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', options); // Dùng 'en-GB' để định dạng dd/MM/yyyy
+  };
+  // lấy id
+
+  const handleGetIDTask = id => {
+    navigation.navigate('Detail', {id: id});
+  };
   const doingItem = ({item}) => (
-    <ImcompleteTaskComponent
-      name={item.name}
-      date={item.date}
-      time={item.time}
-    />
+    <TouchableOpacity onPress={() => handleGetIDTask(item._id)}>
+      <ImcompleteTaskComponent
+        name={item.description}
+        date={formatDate(item.day)}
+        time={item.time}
+      />
+    </TouchableOpacity>
   );
   const doneItem = ({item}) => (
-    <CompletedTaskComponent
-      name={item.name}
-      date={item.date}
-      time={item.time}
-    />
+    <TouchableOpacity onPress={() => handleGetIDTask(item._id)}>
+      <CompletedTaskComponent
+        name={item.description}
+        date={formatDate(item.day)}
+        time={item.time}
+      />
+    </TouchableOpacity>
   );
   return (
     <LinearGradientView style={{flex: 1}}>
@@ -58,11 +130,15 @@ const Home = () => {
       </Text>
       <View style={{height: 200}}>
         <FlatList
-          style={{margin: 10}}
-          data={tasksDoing}
+          style={{
+            margin: 10,
+            backgroundColor: taskDoing.length > 0 ? 'transparent' : 'white',
+            borderRadius: 15,
+          }}
+          data={taskDoing}
           renderItem={doingItem}
           scrollEnabled={true}
-          keyExtractor={item => item.id}></FlatList>
+          keyExtractor={item => item._id.toString()}></FlatList>
       </View>
       <Text
         style={[
@@ -73,11 +149,15 @@ const Home = () => {
       </Text>
       <View style={{height: 200}}>
         <FlatList
-          style={{margin: 10}}
-          data={tasksDone}
+          style={{
+            margin: 10,
+            backgroundColor: taskDone.length > 0 ? 'transparent' : 'white',
+            borderRadius: 15,
+          }}
+          data={taskDone}
           renderItem={doneItem}
           scrollEnabled={true}
-          keyExtractor={item => item.id}></FlatList>
+          keyExtractor={item => item._id.toString()}></FlatList>
       </View>
     </LinearGradientView>
   );

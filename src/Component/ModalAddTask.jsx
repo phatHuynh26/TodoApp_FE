@@ -7,13 +7,19 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  ToastAndroid,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import axios from 'axios';
+import {useDispatch, useSelector} from 'react-redux';
 
-const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
-  const [task, setTask] = useState('');
+const ModalAddTask = ({visible, onClose, email}) => {
+  const [title, setTitle] = useState('');
+  const appState = useSelector(state => state.app);
+
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date());
+  const [time, setTime] = useState('09:00');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -26,22 +32,53 @@ const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
   const handleTimeChange = (event, selectedTime) => {
     const currentTime = selectedTime || date;
     setShowTimePicker(false);
-    setDate(currentTime);
+    setTime(
+      `${String(currentTime.getHours()).padStart(2, '0')}:${String(
+        currentTime.getMinutes(),
+      ).padStart(2, '0')}`,
+    );
+  };
+  const emailUser = appState.user.email
+  
+  const handleCreate = async () => {
+    try {
+      const formattedDate = date.toISOString(); // Convert date to ISO string
+      const response = await axios.post('http://10.0.2.2:2610/users/addtask', {
+        email: emailUser,
+        title: title, // Use the title input value
+        description: description,
+        day: formattedDate,
+        time: time,
+      });
+      if (response.status === 200) {
+        ToastAndroid.show("Add Task Successfully", ToastAndroid.SHORT)
+        onClose(); // Close the modal
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
   return (
-    <Modal visible={visible} transparent={true} animationType="slide" >
+    <Modal visible={visible} transparent={true} animationType="slide">
       <View style={styles.container}>
         <View style={styles.modalView}>
-          <Text style={styles.input}>Task</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Title"
+            placeholderTextColor="white"
+            value={title}
+            onChangeText={setTitle}
+          />
           <View style={styles.inputDescription}>
             <Image
               style={{height: 15, width: 15, marginTop: 10}}
-              source={require('../assets/img/description.png')}></Image>
+              source={require('../assets/img/description.png')}
+            />
             <TextInput
               style={styles.description}
               placeholder="Description"
-              placeholderTextColor={'white'}
+              placeholderTextColor="white"
               value={description}
               onChangeText={setDescription}
               multiline={true}
@@ -55,7 +92,8 @@ const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
               onPress={() => setShowDatePicker(true)}>
               <Image
                 style={{height: 15, width: 15, marginTop: 3}}
-                source={require('../assets/img/calender.png')}></Image>
+                source={require('../assets/img/calender.png')}
+              />
               <Text style={styles.buttonText}>Date</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -63,7 +101,8 @@ const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
               onPress={() => setShowTimePicker(true)}>
               <Image
                 style={{height: 15, width: 15, marginTop: 3}}
-                source={require('../assets/img/time.png')}></Image>
+                source={require('../assets/img/time.png')}
+              />
               <Text style={styles.buttonText}>Time</Text>
             </TouchableOpacity>
           </View>
@@ -87,10 +126,12 @@ const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
 
           <View style={styles.row}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>cancel</Text>
+              <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.createButton} onPress={onPress}>
-              <Text style={styles.createText}>create</Text>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={handleCreate}>
+              <Text style={styles.createText}>Create</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -98,13 +139,13 @@ const ModalAddTask = ({visible, onClose, onCreate, onPress}) => {
     </Modal>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
-  
   },
   modalView: {
     width: '100%',
@@ -124,7 +165,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   inputDescription: {
-    flexDirection:"row",
+    flexDirection: 'row',
     width: '100%',
     padding: 10,
     borderColor: '#ccc',
@@ -137,6 +178,8 @@ const styles = StyleSheet.create({
   description: {
     height: 100,
     textAlignVertical: 'top',
+    color: 'white',
+
   },
   row: {
     flexDirection: 'row',

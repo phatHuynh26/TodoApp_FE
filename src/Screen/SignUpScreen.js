@@ -1,4 +1,10 @@
-import {StyleSheet, Text, View, TouchableOpacity, ToastAndroid} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ToastAndroid,
+} from 'react-native';
 import React, {useState} from 'react';
 import HeaderAuthenScreen from '../Component/HeaderAuthenScreenComponent';
 import LinearGradientView from '../Component/LinearGradientView';
@@ -14,6 +20,16 @@ const SignUpScreen = () => {
   const [password, setpassword] = useState('');
   const navigation = useNavigation();
   const handleSignUp = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      ToastAndroid.show('Email không hợp lệ', ToastAndroid.SHORT);
+      return;
+    }
+
+    if (password.length < 8) {
+      ToastAndroid.show('Mật khẩu phải có ít nhất 8 ký tự', ToastAndroid.SHORT);
+      return;
+    }
     try {
       const response = await axios.post('http://10.0.2.2:2610/users/register', {
         name,
@@ -21,11 +37,10 @@ const SignUpScreen = () => {
         password,
       });
       if (response.data.status == true) {
-        ToastAndroid.show("Đăng ký thành công", ToastAndroid.SHORT)
-        navigation.navigate('Login');
+        ToastAndroid.show('Đăng ký thành công', ToastAndroid.SHORT);
+        navigation.navigate('SignIn');
       } else {
-        ToastAndroid.show("Đăng ký không thành công", ToastAndroid.SHORT)
-
+        ToastAndroid.show('Đăng ký không thành công', ToastAndroid.SHORT);
       }
       console.log(response);
     } catch (error) {

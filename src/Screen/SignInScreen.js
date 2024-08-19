@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, TouchableOpacity, Button} from 'react-native';
+import {StyleSheet, Text, View, TouchableOpacity, Button,ToastAndroid} from 'react-native';
 import React, {useState} from 'react';
 import HeaderAuthenScreen from '../Component/HeaderAuthenScreenComponent';
 import LinearGradientView from '../Component/LinearGradientView';
@@ -14,7 +14,7 @@ const SignInScreen = () => {
   const navigation = useNavigation();
   const Register = () => {
     {
-      navigation.navigate('Register');
+      navigation.navigate('SignUp');
     }
   };
 
@@ -23,10 +23,34 @@ const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const handleLogin = async () => {
-    const body = {email, password};
-    dispatch(login(body));
-    ToastAndroid.show('Đăng nhập thành công', ToastAndroid.SHORT);
-    console.log(body);
+    if (!email || !password) {
+      ToastAndroid.show(
+        'Vui lòng nhập đầy đủ email và password',
+        ToastAndroid.SHORT,
+      );
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      ToastAndroid.show('Email không hợp lệ', ToastAndroid.SHORT);
+      return;
+    }
+    if (password.length < 8) {
+      ToastAndroid.show('Mật khẩu phải có ít nhất 8 ký tự', ToastAndroid.SHORT);
+      return;
+    }
+    try {
+      const body = {email, password};
+      await dispatch(login(body));
+      ToastAndroid.show('Đăng nhập thành công', ToastAndroid.SHORT);
+      console.log(body);
+    } catch (error) {
+      ToastAndroid.show(
+        'Đăng nhập thất bại. Vui lòng thử lại.',
+        ToastAndroid.SHORT,
+      );
+      console.error('Login error:', error);
+    }
   };
   return (
     <LinearGradientView style={styles.container}>

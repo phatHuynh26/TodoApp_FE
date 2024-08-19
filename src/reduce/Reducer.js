@@ -3,7 +3,8 @@ import {login} from './UserAPI';
 
 const initialState = {
   user: null,
-  taskList: [],
+  // incompleteTask: [],
+  // completedTask:[]
 };
 
 const appSlice = createSlice({

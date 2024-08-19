@@ -13,10 +13,10 @@ const AxiosInstance = (contentType = 'application/json') => {
       // const token = await AsyncStorage.getItem('token');
       const token = '';
       config.headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'Content-Type': contentType
-    }
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': contentType,
+      };
       return config;
     },
     err => Promise.reject(err),

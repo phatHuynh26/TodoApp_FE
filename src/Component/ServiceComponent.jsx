@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     width: 276,
     top: 410,
     position: 'absolute',
+    left:75
   },
   footer: {
     flexDirection: 'row',
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
   iconSwitch: {
     height: 7,
     width: 91,
-    left: 20,
+    left: 35,
   },
   nextButton: {
     height: 70,

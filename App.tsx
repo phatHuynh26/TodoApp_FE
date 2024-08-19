@@ -9,16 +9,16 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { Provider } from 'react-redux';
+import {Provider} from 'react-redux';
 import store from './src/reduce/Store';
 import AppNavigation from './src/navigation/AppNavigation';
 
 function App(): React.JSX.Element {
   return (
     <Provider store={store}>
-    <AppNavigation/>
+      <AppNavigation />
     </Provider>
-  ) 
+  );
 }
 
 export default App;
